@@ -11,7 +11,7 @@ import { IReactJSONSettingsV2 } from './IReactJSONSettingsV2'; // Assuming you h
  * @returns
  */
 const FPSReactJSON2Hook: React.FC<IReactJSONSettingsV2> = (props) => {
-  const [ReactJsonView, setReactJsonView] = useState<any>(null);
+  const [ReactJson, setReactJsonView] = useState<any>(null);
 
   useEffect(() => {
     const script = document.createElement('script');
@@ -21,7 +21,7 @@ const FPSReactJSON2Hook: React.FC<IReactJSONSettingsV2> = (props) => {
 
     script.onload = () => {
       console.log('React JSON Viewer dynamically loaded');
-      setReactJsonView((window as any).ReactJsonView); // Access the global ReactJsonView
+      setReactJsonView((window as any).ReactJson ); // Access the global ReactJsonView
     };
 
     script.onerror = (err) => {
@@ -35,7 +35,7 @@ const FPSReactJSON2Hook: React.FC<IReactJSONSettingsV2> = (props) => {
     };
   }, []);
 
-  if (!ReactJsonView) {
+  if (!ReactJson) {
     return <div>Loading JSON Viewer...</div>;
   }
 
@@ -50,7 +50,7 @@ const FPSReactJSON2Hook: React.FC<IReactJSONSettingsV2> = (props) => {
   const indentWidth = props.indentWidth || 2;
 
   return (
-    <ReactJsonView
+    <ReactJson
       src={jsonObject}
       name={props.name}
       collapsed={collapsed}
