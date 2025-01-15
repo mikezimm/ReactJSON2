@@ -15,8 +15,9 @@ const FPSReactJSON2Hook: React.FC<IReactJSONSettingsV2> = (props) => {
 
   useEffect(() => {
     const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/react-json-view@1.21.0/dist/main.min.js'; // SPFx 1.17.3+ version Adjust version if needed
-    // script.src = 'https://cdn.jsdelivr.net/npm/react-json-view@1.19.1/dist/main.min.js'; // SPFx 1.5.1 version Adjust version if needed
+    script.src = 'https://cdn.jsdelivr.net/npm/@microlink/react-json-view@1.24.0/dist/main.min.js'; // SPFx 1.17.3+ version Adjust version if needed
+    // script.src = 'https://cdn.jsdelivr.net/npm/@microlink/react-json-view@1.24.0/dist/main.min.js'; // SPFx 1.17.3+ version Adjust version if needed
+    // script.src = 'https://cdn.jsdelivr.net/npm/@microlink/react-json-view@1.24.1/dist/main.min.js'; // SPFx 1.5.1 version Adjust version if needed
     script.async = true;
 
     script.onload = () => {

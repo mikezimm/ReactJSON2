@@ -13,7 +13,7 @@
   },
   "externals": {
     "ReactJsonView": {
-      "path":"https://cdn.jsdelivr.net/npm/react-json-view@1.21.0/dist/main.min.js",
+      "path":"https://cdn.jsdelivr.net/npm/@microlink/react-json-view@1.24.0/dist/main.min.js",
       "globalName":"ReactJsonView"
     }
   },
