@@ -3,7 +3,7 @@ import styles from './ReactJsonV2.module.scss';
 import { IReactJsonV2Props } from './IReactJsonV2Props';
 import { escape } from '@microsoft/sp-lodash-subset';
 
-import FPSReactJSON2Hook from './JSONViewerV2/ReactJSON2HookDYN';
+import FPSReactJSON2Hook from './JSONViewerV2/ReactJSON2HookNPM';
 
 export default class ReactJsonV2 extends React.Component<IReactJsonV2Props, {}> {
   public render(): React.ReactElement<IReactJsonV2Props> {
