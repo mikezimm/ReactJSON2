@@ -36,6 +36,7 @@ export interface IFpsPeoplePickerProps {
   size?: 'S' | 'M' | 'L'; // Optional size for user images
 
   typeToShow?: boolean; // if true, does not show any names until the user types a search
+  maxToShow?: number;  // Maximum number of users to show (in case of large return results)
   debounceDelay?: number; // Optional debounce delay with default value of 200ms
 
   styles?: React.CSSProperties;
@@ -56,43 +57,26 @@ const FpsPeoplePicker: React.FC<IFpsPeoplePickerProps> = ({
   typeToShow = false,
   multiSelect = true, // Default to true for multi-select functionality
   disabled = false,
+  maxToShow = 7,
 }) => {
+
   // States for managing user search, list of users, and selected users
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [userResults, setUsersResults] = useState<IFpsUsersReturn>(createEmptyFpsUsersReturn());
   const [allUsers, setAllUsers] = useState<IFpsUsersReturn>( createEmptyFpsUsersReturn() ); // Store all users
+  const [filteredResults, setFilteredResults] = useState<IFpsUsersReturn>(createEmptyFpsUsersReturn());
   const [loading, setLoading] = useState<boolean>(false);
   const [fetchingMessage, setFetchingMessage] = useState<string>(''); // Message for loading state
   const [selectedUsers, setSelectedUsers] = useState<ISiteUserInfo[]>(initialData || []); // Selected users for multi-select
 
-  // Function to send selected users back to the parent
-  // const sendSelectedUsers = useCallback(() => {
-  //   if (onUsersFetched) {
-  //     sendSelectedUsers(selectedUsers); // Send only selected users to the parent
-  //   }
-  // }, [sendSelectedUsers, selectedUsers]);
-
-  // Fetch all users from SharePoint
   const fetchAllUsers = useCallback(async () => {
     setLoading(true);
     setFetchingMessage("Fetching site users...");
 
     const sourceProps = createUsersSource( siteUrl, fpsSpService );
-
     const results = await getSiteUsersAPI( sourceProps, true, true );
 
     try {
-      // const response = await fetch(`${siteUrl}/_api/web/siteusers`, {
-      //   headers: {
-      //     Accept: "application/json;odata=verbose",
-      //   },
-      // });
 
-      // if (!response.ok) {
-      //   throw new Error(`Error: ${response.statusText}`);
-      // }
-
-      // const data = await response.json();
       results.users = results.users.map((user: ISiteUserInfo) => {
         const imageUrl = `${CurrentOrigin}/_layouts/15/userphoto.aspx?size=${ size || 'L' }&accountname=${user.Email ? user.Email : getEmailFromLoginName( user.LoginName ) }`;
         return { ...user, imageUrl: imageUrl };
@@ -104,7 +88,7 @@ const FpsPeoplePicker: React.FC<IFpsPeoplePickerProps> = ({
       }
 
       setAllUsers(results); // Save all users to state
-      setUsersResults(results); // Initialize user list
+      setFilteredResults(results); // Initialize user list
 
       // Call the parent callback, if provided, to pass the users up
       if (onUsersFetched) {
@@ -112,7 +96,7 @@ const FpsPeoplePicker: React.FC<IFpsPeoplePickerProps> = ({
       }
     } catch (error) {
       console.error("Error fetching users:", error);
-      setUsersResults( createErrorFpsUsersReturn(siteUrl)); // Reset users on error
+      setFilteredResults( createErrorFpsUsersReturn(siteUrl)); // Reset users on error
     } finally {
       setLoading(false);
       setFetchingMessage(''); // Hide the fetching message once loading is done
@@ -122,7 +106,7 @@ const FpsPeoplePicker: React.FC<IFpsPeoplePickerProps> = ({
   // Debounced logic to filter users based on search term
   useEffect(() => {
     if (!searchTerm) {
-      setUsersResults(allUsers); // Show all users when search term is cleared
+      setFilteredResults(allUsers); // Show all users when search term is cleared
       return;
     }
 
@@ -132,7 +116,7 @@ const FpsPeoplePicker: React.FC<IFpsPeoplePickerProps> = ({
         user.Title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (user.Email && user.Email.toLowerCase().includes(searchTerm.toLowerCase()))
       );
-      setUsersResults( { ...allUsers, users: filteredUsers });
+      setFilteredResults( { ...allUsers, users: filteredUsers });
     }, debounceDelay);
 
     return () => clearTimeout(handler); // Cleanup on searchTerm change
@@ -200,7 +184,7 @@ const FpsPeoplePicker: React.FC<IFpsPeoplePickerProps> = ({
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         onFocus={handleFocus} // Trigger fetch on focus
-        placeholder="Search for a user..."
+        placeholder="Search for user by Title or Email..."
         className="search-input"
         disabled={disabled} // Disable the search input
         style={{ opacity: disabled ? 0.5 : 1 }} // Optional styling for disabled state
@@ -213,18 +197,20 @@ const FpsPeoplePicker: React.FC<IFpsPeoplePickerProps> = ({
         opacity: disabled ? 0.7 : 1, // Reduce opacity when disabled
         pointerEvents: disabled ? 'none' : 'auto', // Prevent interactions when disabled
       }}>
-        {/* Display no users found message if there are no results */}
+        {/* If loading, display Fetching message */}
+        {/* OR if loaded and no users, display no users found message if there are no results */}
+        {/* OR if !fetchingMessage, display users up to max allowable */}
         {loading ? (
           <p>Fetching user list...</p>
-        ) : userResults.users.length === 0 ? (
+        ) : allUsers.users.length === 0 ? (
           <p>No users found.</p>
         ) : (
           !fetchingMessage &&
           (typeToShow === true && !searchTerm ? (
-            <p>Type a name to search {userResults.users.length} users</p>
+            <p>Type a name to search {allUsers.users.length} users</p>
           ) : (
             <>
-              { userResults.users.slice(0, 4).map((user) => (
+              { filteredResults.users.slice(0, maxToShow).map((user) => (
                 <li key={user.Id} className="user-item">
                   <input
                     type="checkbox"
@@ -238,15 +224,14 @@ const FpsPeoplePicker: React.FC<IFpsPeoplePickerProps> = ({
                   </div>
                 </li>
               ))}
-              {userResults.users.length > 4 && (
-                <p>Showing 4 of {userResults.users.length} users</p>
+              {filteredResults.users.length > maxToShow && (
+                <p>Showing {maxToShow } of {allUsers.users.length} users</p>
               )}
               </>
 
           ))
         )}
       </ul>
-      {/* Description section */}
       {description && <div className="fps-people-picker-description">{description}</div>}
     </div>
   );
