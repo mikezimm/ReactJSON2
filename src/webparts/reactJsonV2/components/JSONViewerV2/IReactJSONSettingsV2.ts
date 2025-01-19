@@ -14,6 +14,7 @@
  */
 
 export interface IReactJSONSettingsV1 {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   jsonObject?: any;
   name: string;
   collapsed?: boolean | number;  // Defaults to false

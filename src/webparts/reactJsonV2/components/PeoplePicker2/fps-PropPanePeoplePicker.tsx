@@ -10,7 +10,6 @@ export interface IPropertyPaneFpsPeoplePickerProps extends IFpsPeoplePickerProps
   targetProperty: string,
   label: string;
   onPropertyChange: (propertyValue: ISiteUserInfo[]) => void;
-  wpContext: any;
 }
 
 // Function-based implementation for the custom Property Pane field

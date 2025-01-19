@@ -5,7 +5,16 @@ import { ISiteUserInfo } from '@mikezimm/fps-core-v7/lib/types/@pnp/@2.14.0/sp/s
 
 import './fps-People-Picker.css'; // Import the CSS file for styling
 import { IFpsSpHttpServiceMIN } from '@mikezimm/fps-core-v7/lib/components/molecules/SpHttp/Sp/IFpsSpHttpServiceMIN';
-import { CurrentSiteAbsolute, } from '@mikezimm/fps-core-v7/lib/components/molecules/source-props/WindowLocationConstants';
+import { CurrentSiteAbsolute } from '@mikezimm/fps-core-v7/lib/components/molecules/source-props/WindowLocationConstants';
+import { getSiteUsersAPI } from '@mikezimm/fps-core-v7/lib/restAPIs/sites/users/getSiteUsersAPI';
+import { CurrentOrigin } from '@mikezimm/fps-core-v7/lib/components/molecules/source-props/WindowLocationConstants';
+import { getEmailFromLoginName } from '@mikezimm/fps-core-v7/lib/components/atoms/Users/getEmailFromLoginName';
+
+
+import { createUsersSource } from './createUsersSource';
+import { IFpsUsersReturn } from '@mikezimm/fps-core-v7/lib/types/fps-returns/sites/users/IFpsUsersReturn';
+import { createEmptyFpsUsersReturn, createErrorFpsUsersReturn } from '@mikezimm/fps-core-v7/lib/components/molecules/process-results/createEmptyFpsUsersReturn';
+
 require('./fps-People-Picker.css');
 
 // Define the pre-filter rule types
@@ -18,7 +27,7 @@ export interface IFpsPeoplePickerProps {
   description?: string | JSX.Element;
   fpsSpService: IFpsSpHttpServiceMIN;
   siteUrl?: string; // Optional SharePoint site URL
-  onUsersFetched?: (users: ISiteUserInfo[]) => void; // Optional callback to pass users back to parent
+  onUsersFetched?: (results: IFpsUsersReturn) => void; // Optional callback to pass users back to parent
   sendSelectedUsers?: (users: ISiteUserInfo[]) => void; // Optional callback to pass users back to parent
   initialData?: ISiteUserInfo[]; // Add this line
   multiSelect?: boolean; // New optional property for enabling multi-select (default is true)
@@ -35,6 +44,7 @@ export interface IFpsPeoplePickerProps {
 }
 
 const FpsPeoplePicker: React.FC<IFpsPeoplePickerProps> = ({
+  fpsSpService,
   key, label, description, labelStyles, className,
   onUsersFetched,
   sendSelectedUsers,
@@ -49,8 +59,8 @@ const FpsPeoplePicker: React.FC<IFpsPeoplePickerProps> = ({
 }) => {
   // States for managing user search, list of users, and selected users
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [users, setUsers] = useState<ISiteUserInfo[]>([]);
-  const [allUsers, setAllUsers] = useState<ISiteUserInfo[]>([]); // Store all users
+  const [userResults, setUsersResults] = useState<IFpsUsersReturn>(createEmptyFpsUsersReturn());
+  const [allUsers, setAllUsers] = useState<IFpsUsersReturn>( createEmptyFpsUsersReturn() ); // Store all users
   const [loading, setLoading] = useState<boolean>(false);
   const [fetchingMessage, setFetchingMessage] = useState<string>(''); // Message for loading state
   const [selectedUsers, setSelectedUsers] = useState<ISiteUserInfo[]>(initialData || []); // Selected users for multi-select
@@ -67,30 +77,34 @@ const FpsPeoplePicker: React.FC<IFpsPeoplePickerProps> = ({
     setLoading(true);
     setFetchingMessage("Fetching site users...");
 
+    const sourceProps = createUsersSource( siteUrl, fpsSpService );
+
+    const results = await getSiteUsersAPI( sourceProps, true, true );
+
     try {
-      const response = await fetch(`${siteUrl}/_api/web/siteusers`, {
-        headers: {
-          Accept: "application/json;odata=verbose",
-        },
+      // const response = await fetch(`${siteUrl}/_api/web/siteusers`, {
+      //   headers: {
+      //     Accept: "application/json;odata=verbose",
+      //   },
+      // });
+
+      // if (!response.ok) {
+      //   throw new Error(`Error: ${response.statusText}`);
+      // }
+
+      // const data = await response.json();
+      results.users = results.users.map((user: ISiteUserInfo) => {
+        const imageUrl = `${CurrentOrigin}/_layouts/15/userphoto.aspx?size=${ size || 'L' }&accountname=${user.Email ? user.Email : getEmailFromLoginName( user.LoginName ) }`;
+        return { ...user, imageUrl: imageUrl };
       });
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      let results = data.d.results.map((user: any) => ({
-        ...user,
-        imageUrl: `${window.location.origin}/_layouts/15/userphoto.aspx?size=${size}&accountname=${user.Email ? user.Email : user.AccountName}`,
-      }));
 
       // Apply pre-filter for users with email
       if (preFilter === 'UserWithEmail') {
-        results = results.filter((user: ISiteUserInfo) => (user.PrincipalType === 1 || user.PrincipalType === 2) && !!user.Email);
+        results.users = results.users.filter((user: ISiteUserInfo) => (user.PrincipalType === 1 || user.PrincipalType === 2) && !!user.Email);
       }
 
       setAllUsers(results); // Save all users to state
-      setUsers(results); // Initialize user list
+      setUsersResults(results); // Initialize user list
 
       // Call the parent callback, if provided, to pass the users up
       if (onUsersFetched) {
@@ -98,7 +112,7 @@ const FpsPeoplePicker: React.FC<IFpsPeoplePickerProps> = ({
       }
     } catch (error) {
       console.error("Error fetching users:", error);
-      setUsers([]); // Reset users on error
+      setUsersResults( createErrorFpsUsersReturn(siteUrl)); // Reset users on error
     } finally {
       setLoading(false);
       setFetchingMessage(''); // Hide the fetching message once loading is done
@@ -108,17 +122,17 @@ const FpsPeoplePicker: React.FC<IFpsPeoplePickerProps> = ({
   // Debounced logic to filter users based on search term
   useEffect(() => {
     if (!searchTerm) {
-      setUsers(allUsers); // Show all users when search term is cleared
+      setUsersResults(allUsers); // Show all users when search term is cleared
       return;
     }
 
     const handler = setTimeout(() => {
       // Filter users based on search term
-      const filteredUsers = allUsers.filter(user =>
+      const filteredUsers = allUsers.users.filter(user =>
         user.Title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (user.Email && user.Email.toLowerCase().includes(searchTerm.toLowerCase()))
       );
-      setUsers(filteredUsers);
+      setUsersResults( { ...allUsers, users: filteredUsers });
     }, debounceDelay);
 
     return () => clearTimeout(handler); // Cleanup on searchTerm change
@@ -126,7 +140,7 @@ const FpsPeoplePicker: React.FC<IFpsPeoplePickerProps> = ({
 
   // Trigger the fetch of users when the input is focused
   const handleFocus = async (): Promise<void> => {
-    if (allUsers.length === 0) {
+    if (allUsers.users.length === 0) {
       await fetchAllUsers(); // Fetch all users if not already fetched
     }
   };
@@ -202,25 +216,33 @@ const FpsPeoplePicker: React.FC<IFpsPeoplePickerProps> = ({
         {/* Display no users found message if there are no results */}
         {loading ? (
           <p>Fetching user list...</p>
-        ) : users.length === 0 ? (
+        ) : userResults.users.length === 0 ? (
           <p>No users found.</p>
         ) : (
           !fetchingMessage &&
           (typeToShow === true && !searchTerm ? (
-            <p>Type a name to search {users.length} users</p>
+            <p>Type a name to search {userResults.users.length} users</p>
           ) : (
-            users.map((user) => (
-              <li key={user.Id} className="user-item">
-                <input
-                  type="checkbox"
-                  checked={selectedUsers.some((u) => u.Id === user.Id)} // Check if user is selected
-                  onChange={() => handleCheckboxChange(user)} // Handle checkbox change
-                  className="user-checkbox"
-                />
-                <img src={user.imageUrl} alt={user.Title} className="user-image" />
-                {user.Title} - {user.Email}
-              </li>
-            ))
+            <>
+              { userResults.users.slice(0, 4).map((user) => (
+                <li key={user.Id} className="user-item">
+                  <input
+                    type="checkbox"
+                    checked={selectedUsers.some((u) => u.Id === user.Id)} // Check if user is selected
+                    onChange={() => handleCheckboxChange(user)} // Handle checkbox change
+                    className="user-checkbox"
+                  />
+                  <img src={user.imageUrl} alt={user.Title} className="user-image" />
+                  <div title={ `Email:  ${user.Email || 'None'}` }>
+                    {user.Title ? user.Title : user.Email}
+                  </div>
+                </li>
+              ))}
+              {userResults.users.length > 4 && (
+                <p>Showing 4 of {userResults.users.length} users</p>
+              )}
+              </>
+
           ))
         )}
       </ul>

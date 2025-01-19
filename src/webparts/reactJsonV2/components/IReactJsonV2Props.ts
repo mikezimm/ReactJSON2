@@ -1,3 +1,4 @@
+import { IFpsSpHttpServiceMIN } from '@mikezimm/fps-core-v7/lib/components/molecules/SpHttp/Sp/IFpsSpHttpServiceMIN';
 import { ISiteUserInfo } from '@mikezimm/fps-core-v7/lib/types/@pnp/@2.14.0/sp/site-users';
 
 export interface IReactJsonV2Props {
@@ -8,4 +9,5 @@ export interface IReactJsonV2Props {
   userDisplayName: string;
   context: any;
   supportContacts: ISiteUserInfo[];
+  fpsSpService: IFpsSpHttpServiceMIN;
 }

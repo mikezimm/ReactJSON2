@@ -12,11 +12,16 @@ import ReactJsonV2 from './components/ReactJsonV2';
 import { IReactJsonV2Props } from './components/IReactJsonV2Props';
 import { IReactJsonV2WebPartProps } from './IReactJsonV2WebPartProps';
 import { buildEasyModeGroup } from './components/PropPaneGroups/EasyProps';
+import { IFpsSpHttpServiceMIN } from '@mikezimm/fps-core-v7/lib/components/molecules/SpHttp/Sp/IFpsSpHttpServiceMIN';
+import FpsSpHttpService from '@mikezimm/fps-library-v2/lib/banner/FPSWebPartClass/FpsSpHttpService';
 
 export default class ReactJsonV2WebPart extends BaseClientSideWebPart<IReactJsonV2WebPartProps> {
 
   private _isDarkTheme: boolean = false;
   private _environmentMessage: string = '';
+  private _fpsSpService: IFpsSpHttpServiceMIN = null;
+
+
 
   public render(): void {
     const element: React.ReactElement<IReactJsonV2Props> = React.createElement(
@@ -29,6 +34,7 @@ export default class ReactJsonV2WebPart extends BaseClientSideWebPart<IReactJson
         userDisplayName: this.context.pageContext.user.displayName,
         context: this.context,
         supportContacts: this.properties.supportContacts,
+        fpsSpService: this._fpsSpService,
       }
     );
 
@@ -36,6 +42,7 @@ export default class ReactJsonV2WebPart extends BaseClientSideWebPart<IReactJson
   }
 
   protected onInit(): Promise<void> {
+    this._fpsSpService = new FpsSpHttpService(this.context.spHttpClient);
     return this._getEnvironmentMessage().then(message => {
       this._environmentMessage = message;
     });

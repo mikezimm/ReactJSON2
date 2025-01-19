@@ -34,7 +34,6 @@ export function buildEasyModeGroup( thisWPClass: IThisFPSWebPartClass, wpProps: 
       },
       multiSelect: true,
       typeToShow: true,
-      wpContext: thisWPClass.context,
       size: 'M',
     }),
   )
