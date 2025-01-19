@@ -10,10 +10,9 @@ import { getSiteUsersAPI } from '@mikezimm/fps-core-v7/lib/restAPIs/sites/users/
 import { CurrentOrigin } from '@mikezimm/fps-core-v7/lib/components/molecules/source-props/WindowLocationConstants';
 import { getEmailFromLoginName } from '@mikezimm/fps-core-v7/lib/components/atoms/Users/getEmailFromLoginName';
 
-
 import { createUsersSource } from './createUsersSource';
 import { IFpsUsersReturn } from '@mikezimm/fps-core-v7/lib/types/fps-returns/sites/users/IFpsUsersReturn';
-import { createEmptyFpsUsersReturn, createErrorFpsUsersReturn } from '@mikezimm/fps-core-v7/lib/components/molecules/process-results/createEmptyFpsUsersReturn';
+import { createEmptyFpsUsersReturn } from '@mikezimm/fps-core-v7/lib/components/molecules/process-results/createEmptyFpsUsersReturn';
 
 require('./fps-People-Picker.css');
 
@@ -44,6 +43,8 @@ export interface IFpsPeoplePickerProps {
   labelStyles?: React.CSSProperties;
 }
 
+const maxFailedAttempts: number = 10;
+
 const FpsPeoplePicker: React.FC<IFpsPeoplePickerProps> = ({
   fpsSpService,
   key, label, description, labelStyles, className,
@@ -68,15 +69,27 @@ const FpsPeoplePicker: React.FC<IFpsPeoplePickerProps> = ({
   const [fetchingMessage, setFetchingMessage] = useState<string>(''); // Message for loading state
   const [selectedUsers, setSelectedUsers] = useState<ISiteUserInfo[]>(initialData || []); // Selected users for multi-select
 
+  /**
+   * 2025-01-19:  I added failedCount in an attempt to halt unwanted re-runing of fetchAllUsers.
+   *  However, being a callback function, it does not seem to recognize the failed count.
+   *  But for some reason, it is no longer preventing infinate loop callback so I'm not touching it.
+   *  And if you give it a sec and click on it again, it does seem to recognize the count and show it.
+   *     like:   Failed 16 attempts... something is wrong ;|
+   */
+  const [ failedCount, setFailedCount ] = useState<number>( 0 );
+
   const fetchAllUsers = useCallback(async () => {
+
+    if ( failedCount === maxFailedAttempts ) return;
+
     setLoading(true);
     setFetchingMessage("Fetching site users...");
 
-    const sourceProps = createUsersSource( siteUrl, fpsSpService );
-    const results = await getSiteUsersAPI( sourceProps, true, true );
+    const sourceProps = createUsersSource( `${siteUrl}`, fpsSpService );
+    const results = await getSiteUsersAPI( sourceProps, false, true );
 
-    try {
-
+  // try {
+    if ( results.status === 'Success' ) {
       results.users = results.users.map((user: ISiteUserInfo) => {
         const imageUrl = `${CurrentOrigin}/_layouts/15/userphoto.aspx?size=${ size || 'L' }&accountname=${user.Email ? user.Email : getEmailFromLoginName( user.LoginName ) }`;
         return { ...user, imageUrl: imageUrl };
@@ -86,21 +99,22 @@ const FpsPeoplePicker: React.FC<IFpsPeoplePickerProps> = ({
       if (preFilter === 'UserWithEmail') {
         results.users = results.users.filter((user: ISiteUserInfo) => (user.PrincipalType === 1 || user.PrincipalType === 2) && !!user.Email);
       }
-
-      setAllUsers(results); // Save all users to state
-      setFilteredResults(results); // Initialize user list
-
-      // Call the parent callback, if provided, to pass the users up
-      if (onUsersFetched) {
-        onUsersFetched(results); // This still sends all users initially
-      }
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      setFilteredResults( createErrorFpsUsersReturn(siteUrl)); // Reset users on error
-    } finally {
-      setLoading(false);
-      setFetchingMessage(''); // Hide the fetching message once loading is done
     }
+
+    setAllUsers(results); // Save all users to state
+    setFilteredResults(results); // Initialize user list
+
+    // Call the parent callback, if provided, to pass the users up
+    if (onUsersFetched) {
+      onUsersFetched(results); // This still sends all users initially
+    }
+
+    setLoading(false);
+    setFetchingMessage( results.status !== 'Success' ? results.errorInfo.friendly : '' ); // Hide the fetching message once loading is done
+
+    if ( results.status === 'Error' )  setFailedCount(prevFailedCount => prevFailedCount + 1);
+    console.log( `fetchAllUsers:`, results.status, results  );
+
   }, [siteUrl, size, onUsersFetched, preFilter]);
 
   // Debounced logic to filter users based on search term
@@ -120,7 +134,8 @@ const FpsPeoplePicker: React.FC<IFpsPeoplePickerProps> = ({
     }, debounceDelay);
 
     return () => clearTimeout(handler); // Cleanup on searchTerm change
-  }, [searchTerm, allUsers, debounceDelay]);
+  }, [searchTerm, debounceDelay]);
+  // }, [searchTerm, allUsers, debounceDelay]);
 
   // Trigger the fetch of users when the input is focused
   const handleFocus = async (): Promise<void> => {
@@ -202,6 +217,10 @@ const FpsPeoplePicker: React.FC<IFpsPeoplePickerProps> = ({
         {/* OR if !fetchingMessage, display users up to max allowable */}
         {loading ? (
           <p>Fetching user list...</p>
+        ) : failedCount >= maxFailedAttempts  ? (
+          <p style={{ color: 'red' }}>Failed { failedCount } attempts... something is wrong ;|</p>
+        ) : allUsers.status !== 'Success' && allUsers.status !== 'Unknown' ? (
+          <p style={{ color: 'red' }}>{ allUsers.errorInfo?.friendly }</p>
         ) : allUsers.users.length === 0 ? (
           <p>No users found.</p>
         ) : (
