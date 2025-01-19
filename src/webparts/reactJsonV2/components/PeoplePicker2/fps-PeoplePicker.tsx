@@ -58,7 +58,7 @@ const FpsPeoplePicker: React.FC<IFpsPeoplePickerProps> = ({
   typeToShow = false,
   multiSelect = true, // Default to true for multi-select functionality
   disabled = false,
-  maxToShow = 7,
+  maxToShow = 5,
 }) => {
 
   // States for managing user search, list of users, and selected users
