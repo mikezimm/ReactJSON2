@@ -13,11 +13,12 @@
   },
   "externals": {
     "ReactJsonView": {
-      "path":"https://cdn.jsdelivr.net/npm/@microlink/react-json-view@1.24.0/dist/main.min.js",
-      "globalName":"ReactJsonView"
+      "path": "https://cdn.jsdelivr.net/npm/@microlink/react-json-view@1.24.0/dist/main.min.js",
+      "globalName": "ReactJsonView"
     }
   },
   "localizedResources": {
-    "ReactJsonV2WebPartStrings": "lib/webparts/reactJsonV2/loc/{locale}.js"
+    "ReactJsonV2WebPartStrings": "lib/webparts/reactJsonV2/loc/{locale}.js",
+    "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js"
   }
 }

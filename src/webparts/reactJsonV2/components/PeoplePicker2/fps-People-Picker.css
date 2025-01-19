@@ -1,0 +1,99 @@
+/* fps-People-Picker.css */
+
+/* Main container class for the component */
+.fps-people-picker {
+  font-family: Arial, sans-serif;
+  padding: 10px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  max-width: 500px;
+  margin: auto;
+}
+
+.fps-people-picker-label {
+  font-size: larger;
+  font-weight: 600;
+}
+
+.fps-people-picker-description {
+  font-size: smaller;
+}
+/* Display selected users at the top */
+.selected-users {
+  margin-bottom: 10px;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+/* Individual selected user badge styling */
+.selected-user {
+  display: inline-flex;
+  align-items: center;
+  background-color: #f1f1f1;
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+
+.selected-user .user-image {
+  height: 20px;
+  margin-right: 4px;
+}
+
+.selected-user .remove-user-btn {
+  margin-left: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: red;
+  /* font-size: 12px; */
+  padding: 0px 5px;
+  font-size: larger;
+  font-weight: 600;
+}
+
+/* Search input field styling */
+.search-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px;
+  font-size: 14px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+/* User list container styling */
+.user-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Each user item styling in the list */
+.user-item {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+/* Checkbox styling */
+.user-checkbox {
+  margin-right: 8px;
+}
+
+/* Image styling for user avatars */
+.user-image {
+  height: 20px;
+  margin-right: 8px;
+  border-radius: 3px;
+  transition: transform 0.3s ease-in-out; /* Smooth scaling */
+}
+
+.user-image:hover {
+  transform: scale(2); /* Scale image by 2x */
+
+}

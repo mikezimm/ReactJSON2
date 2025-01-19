@@ -2,8 +2,7 @@ import * as React from 'react';
 import * as ReactDom from 'react-dom';
 import { Version } from '@microsoft/sp-core-library';
 import {
-  IPropertyPaneConfiguration,
-  PropertyPaneTextField
+  IPropertyPaneConfiguration
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
@@ -11,10 +10,8 @@ import { IReadonlyTheme } from '@microsoft/sp-component-base';
 import * as strings from 'ReactJsonV2WebPartStrings';
 import ReactJsonV2 from './components/ReactJsonV2';
 import { IReactJsonV2Props } from './components/IReactJsonV2Props';
-
-export interface IReactJsonV2WebPartProps {
-  description: string;
-}
+import { IReactJsonV2WebPartProps } from './IReactJsonV2WebPartProps';
+import { buildEasyModeGroup } from './components/PropPaneGroups/EasyProps';
 
 export default class ReactJsonV2WebPart extends BaseClientSideWebPart<IReactJsonV2WebPartProps> {
 
@@ -29,7 +26,9 @@ export default class ReactJsonV2WebPart extends BaseClientSideWebPart<IReactJson
         isDarkTheme: this._isDarkTheme,
         environmentMessage: this._environmentMessage,
         hasTeamsContext: !!this.context.sdks.microsoftTeams,
-        userDisplayName: this.context.pageContext.user.displayName
+        userDisplayName: this.context.pageContext.user.displayName,
+        context: this.context,
+        supportContacts: this.properties.supportContacts,
       }
     );
 
@@ -41,8 +40,6 @@ export default class ReactJsonV2WebPart extends BaseClientSideWebPart<IReactJson
       this._environmentMessage = message;
     });
   }
-
-
 
   private _getEnvironmentMessage(): Promise<string> {
     if (!!this.context.sdks.microsoftTeams) { // running in Teams, office.com or Outlook
@@ -97,21 +94,14 @@ export default class ReactJsonV2WebPart extends BaseClientSideWebPart<IReactJson
   }
 
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
+
     return {
       pages: [
         {
           header: {
             description: strings.PropertyPaneDescription
           },
-          groups: [
-            {
-              groupName: strings.BasicGroupName,
-              groupFields: [
-                PropertyPaneTextField('description', {
-                  label: strings.DescriptionFieldLabel
-                })
-              ]
-            }
+          groups: [ buildEasyModeGroup( this as any, this.properties )
           ]
         }
       ]

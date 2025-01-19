@@ -2,6 +2,7 @@ import * as React from 'react';
 import styles from './ReactJsonV2.module.scss';
 import { IReactJsonV2Props } from './IReactJsonV2Props';
 import { escape } from '@microsoft/sp-lodash-subset';
+import FpsPeoplePicker2 from './PeoplePicker2/fps-PeoplePicker';
 
 import FPSReactJSON2Hook from './JSONViewerV2/ReactJSON2HookNPM';
 
@@ -19,6 +20,7 @@ export default class ReactJsonV2 extends React.Component<IReactJsonV2Props, {}> 
           <h2>Well done, {escape(userDisplayName)}!</h2>
           <div>{environmentMessage}</div>
         </div>
+        <FpsPeoplePicker2 typeToShow={ true } preFilter='All' siteUrl={ this.props.context.pageContext.web.absoluteUrl } key='xyz' fpsSpService={ null }/>
         <div>
           <h3>You are testing the ReactJsonViewer</h3>
           <div><a href="https://github.com/microlinkhq/react-json-view/">/github.com/microlinkhq/react-json-view</a></div>
