@@ -20,7 +20,7 @@ export default class ReactJsonV2 extends React.Component<IReactJsonV2Props, {}> 
           <h2>Well done, {escape(userDisplayName)}!</h2>
           <div>{environmentMessage}</div>
         </div>
-        <FpsPeoplePicker2 typeToShow={ true } preFilter='All' siteUrl={ this.props.context.pageContext.web.absoluteUrl } key='xyz' fpsSpService={ this.props.fpsSpService }/>
+        <FpsPeoplePicker2 typeToShow={ true } preFilter='All' siteUrl={ this.props.context.pageContext.web.absoluteUrl } key='xyz' fpsSpService={ this.props.fpsSpService } disabled={false}/>
         <div>
           <h3>You are testing the ReactJsonViewer</h3>
           <div><a href="https://github.com/microlinkhq/react-json-view/">/github.com/microlinkhq/react-json-view</a></div>
